@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Llama QA - AI PDF Chat</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f4f4f4;
+      }
+      h1 {
+        color: #333;
+      }
+      .container {
+        width: 50%;
+        margin: auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      input,
+      button {
+        padding: 10px;
+        margin: 10px;
+        width: 90%;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+      button {
+        cursor: pointer;
+        background-color: #28a745;
+        color: white;
+        border: none;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      #response {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Llama QA - AI PDF Chat</h1>
+    <div class="container">
+      <h2>Upload a PDF</h2>
+      <input type="file" id="pdfFile" />
+      <button onclick="uploadPDF()">Upload</button>
+
+      <h2>Ask a Question</h2>
+      <input type="text" id="question" placeholder="Enter your question" />
+      <button onclick="askQuestion()">Ask</button>
+
+      <h3>Response:</h3>
+      <p id="response"></p>
+    </div>
+
+    <script>
+      let uploadedFilename = "";
+
+      async function uploadPDF() {
+        const fileInput = document.getElementById("pdfFile");
+        if (!fileInput.files.length) {
+          alert("Please select a PDF to upload!");
+          return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+          let response = await fetch("http://127.0.0.1:8000/upload/", {
+            method: "POST",
+            body: formData,
+          });
+          let data = await response.json();
+          if (response.ok) {
+            uploadedFilename = data.filename;
+            alert("PDF uploaded successfully!");
+          } else {
+            alert("Upload failed: " + data.detail);
+          }
+        } catch (error) {
+          console.error("Error uploading PDF:", error);
+          alert("Error uploading PDF!");
+        }
+      }
+
+      async function askQuestion() {
+        if (!uploadedFilename) {
+          alert("Please upload a PDF first!");
+          return;
+        }
+
+        const questionInput = document.getElementById("question");
+        if (!questionInput.value.trim()) {
+          alert("Enter a question!");
+          return;
+        }
+
+        try {
+          let response = await fetch(
+            `http://127.0.0.1:8000/ask/?filename=${uploadedFilename}&question=${encodeURIComponent(
+              questionInput.value
+            )}`
+          );
+          let data = await response.json();
+          document.getElementById("response").innerText =
+            data.answer || data.error;
+        } catch (error) {
+          console.error("Error fetching answer:", error);
+          alert("Error getting response!");
+        }
+      }
+    </script>
+  </body>
+</html>
